@@ -1,0 +1,8 @@
+name = "MITgcm"
+uuid = "88babb5c-e3cc-11e8-3da4-ebe3050a89d3"
+authors = ["Sean McBane <sean.mcbane@protonmail.com>"]
+version = "0.1.0"
+
+[deps]
+Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
+PackedFaces = "abdf1db6-de0a-11e8-264b-bfe2fcddb17d"
