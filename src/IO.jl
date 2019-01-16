@@ -1,8 +1,10 @@
 module IOFuncs
 
+include("MDSParser.jl")
+
 using Mmap
 
-export readmds2llc!
+export readmds2llc!, MDSParser
 
 function readmdsslice2llc!(A::AbstractArray{T, 2}, slice::AbstractArray{T, 2}) where T
     N = size(A, 1)
