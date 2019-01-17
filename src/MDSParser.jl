@@ -94,6 +94,21 @@ function parse_mds_metadata(str::String)
         """ |> ErrorException |> throw
     end
 
+    if metadata.nFlds != nothing
+        if metadata.fldList == nothing
+            """
+            parse_mds_metadata: nFlds specified, but no fldList received
+            """ |> ErrorException |> throw
+        elseif length(metadata.fldList) != metadata.nFlds
+            """
+            parse_mds_metadata: length(fldList) != nFlds
+            """ |> ErrorException |> throw
+        end
+    elseif metadata.fldList != nothing
+        # metadata.nFlds == nothing if we reached this point.
+        metadata.nFlds = length(metadata.fldList)
+    end
+
     metadata
 end
 
