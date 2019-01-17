@@ -5,18 +5,20 @@ using Unicode
 export MDSMetadata, parse_mds_metadata
 
 mutable struct MDSMetadata
-    ndims::Int
-    dimlist::Vector{Int}
-    dtype::DataType
+    nDims::Int
+    dimList::Vector{Int}
+    dataprec::String
     nrecords::Int
-    nfields::Union{Int, Nothing}
-    fieldlist::Union{Vector{Symbol}, Nothing}
+    nFlds::Union{Int, Nothing}
+    fldList::Union{Vector{String}, Nothing}
 
     otherinfo::Dict{Symbol, Any}
 
     function MDSMetadata()
         this = new()
         this.otherinfo = Dict{Symbol, Any}()
+        this.nFlds = nothing
+        this.fldList = nothing
         this
     end
 end
@@ -24,7 +26,7 @@ end
 const fields_set = Dict([field => false for field in fieldnames(MDSMetadata)])
 
 function parse_mds_metadata(file::IO)
-    str = read(file)
+    str = read(file) |> String
     indx = 1
     # No fields are set at the beginning of parsing.
     foreach(key -> fields_set[key] = false, keys(fields_set))
@@ -53,16 +55,117 @@ function parse_mds_metadata(file::IO)
             end
             metadata.otherinfo[symbol] = val
         end
-        entry, indx = parse_mds_metadata_entry(str)
+        token, indx = get_token(str, indx)
+        if token.ty == :WHITESPACE
+            token, indx = get_token(str, indx)
+        end
+
+        if token.ty != :SEMICOLON && token.ty != :EOF
+            """
+            parse_mds_metadata: Missing semicolon delimiter between entries
+            """ |> ErrorException |> throw
+        end
+        entry, indx = parse_mds_metadata_entry(str, indx)
     end
 
     metadata
 end
 
+function parse_mds_metadata_entry(str, indx)
+    token, indx = get_token(str, indx)
+    if token.ty == :WHITESPACE
+        token, indx = get_token(str, indx)
+    end
+
+    if token.ty == :EOF
+        return nothing, indx
+    elseif token.ty != :SYMBOL
+        """
+        parse_mds_metadata_entry: Entry should begin with a name of the
+        field (alphabetical character + 1 or more alphanumeric characters)
+        """ |> ErrorException |> throw
+    end
+
+    sym = token.contents
+
+    token, indx = get_token(str, indx)
+    if token.ty == :WHITESPACE
+        token, indx = get_token(str, indx)
+    end
+
+    if token.ty != :EQUALS
+        """
+        parse_mds_metadata_entry: Entry should have the format NAME = [ ... ];
+        did not find '='.
+        """ |> ErrorException |> throw
+    end
+
+    entry_val, indx = parse_mds_entry_list(str, indx)
+
+    (sym => entry_val), indx
+end
+
+function parse_mds_entry_list(str, indx)
+    token, indx = get_token(str, indx)
+    if token.ty == :WHITESPACE
+        token, indx = get_token(str, indx)
+    end
+
+    if token.ty != :OPENBRACKET
+        """
+        parse_mds_entry_list: Expected an open bracket to begin the entry
+        argument.
+        """ |> ErrorException |> throw
+    end
+
+    token, indx = get_token(str, indx)
+    if token.ty == :WHITESPACE
+        token, indx = get_token(str, indx)
+    end
+
+    value_type = token_datatype(token)::DataType
+    list = value_type[token.contents]
+
+    while true
+        token, indx = get_token(str, indx)
+        if token.ty == :WHITESPACE
+            token, indx = get_token(str, indx)
+        end
+        if token.ty == :COMMA
+            token, indx = get_token(str, indx)
+        end
+        if token.ty == :WHITESPACE
+            token, indx = get_token(str, indx)
+        end
+
+        if token.ty == :CLOSEBRACKET
+            break
+        elseif token_datatype(token) != value_type
+            """
+            parse_mds_entry_list: Datatype of element ($(token.contents)) is
+            not inferred data type from first element: $value_type
+            """ |> ErrorException |> throw
+        else
+            push!(list, token.contents)
+        end
+    end
+
+    if isempty(list)
+        nothing, indx
+    elseif length(list) == 1
+        list[1], indx
+    else
+        list, indx
+    end
+end
+
+
 struct Token{T}
     ty::Symbol
     contents::T
 end
+
+token_datatype(::Token{T}) where T = T
 
 function get_token(str::String, i)
     if i > length(str)
