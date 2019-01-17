@@ -25,8 +25,9 @@ end
 
 const fields_set = Dict([field => false for field in fieldnames(MDSMetadata)])
 
-function parse_mds_metadata(file::IO)
-    str = read(file) |> String
+parse_mds_metadata(file::IO) = file |> read |> String |> parse_mds_metadata
+
+function parse_mds_metadata(str::String)
     indx = 1
     # No fields are set at the beginning of parsing.
     foreach(key -> fields_set[key] = false, keys(fields_set))
@@ -46,6 +47,7 @@ function parse_mds_metadata(file::IO)
                 expected $expect_type but received $(typeof(val))
                 """))
             setfield!(metadata, symbol, val)
+            fields_set[symbol] = true
         else
             if symbol in keys(metadata.otherinfo)
                 throw(ErrorException(
@@ -66,6 +68,30 @@ function parse_mds_metadata(file::IO)
             """ |> ErrorException |> throw
         end
         entry, indx = parse_mds_metadata_entry(str, indx)
+    end
+
+    for fld in (:nDims, :dimList, :dataprec, :nrecords)
+        if !(fields_set[fld])
+            """
+            parse_mds_metadata: Required field $fld was not found in the metadata
+            file
+            """ |> ErrorException |> throw
+        end
+    end
+
+    if length(metadata.dimList) != 3 * metadata.nDims
+        """
+        parse_mds_metadata: Length of dimList does not match expected; list
+        has length $(length(metadata.dimList)) but should be $(3 * metadata.nDims) =
+        3 * nDims
+        """ |> ErrorException |> throw
+    end
+
+    if metadata.nFlds !== nothing && metadata.nrecords % metadata.nFlds != 0
+        """
+        parse_mds_metadata: nrecords is not evenly divisible by nFlds; invalid
+        mds file specification.
+        """ |> ErrorException |> throw
     end
 
     metadata
