@@ -173,6 +173,9 @@ function parse_mds_entry_list(str, indx)
     if token.ty == :WHITESPACE
         token, indx = get_token(str, indx)
     end
+    if token.ty == :CLOSEBRACKET
+        return nothing, indx
+    end
 
     value_type = token_datatype(token)::DataType
     list = value_type[token.contents]
@@ -193,7 +196,7 @@ function parse_mds_entry_list(str, indx)
             break
         elseif token_datatype(token) != value_type
             """
-            parse_mds_entry_list: Datatype of element ($(token.contents)) is
+            parse_mds_entry_list: Datatype of element ($(typeof(token.contents))) is
             not inferred data type from first element: $value_type
             """ |> ErrorException |> throw
         else
