@@ -1,0 +1,2 @@
+include("mdsparsertests.jl")
+

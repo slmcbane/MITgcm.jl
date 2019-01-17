@@ -7,3 +7,9 @@ version = "0.1.0"
 Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
 PackedFaces = "abdf1db6-de0a-11e8-264b-bfe2fcddb17d"
 Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
