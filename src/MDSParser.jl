@@ -1,6 +1,7 @@
 module MDSParser
 
 using Unicode
+import Base: ==
 
 export MDSMetadata, parse_mds_metadata
 
@@ -21,6 +22,15 @@ mutable struct MDSMetadata
         this.fldList = nothing
         this
     end
+end
+
+function ==(m1::MDSMetadata, m2::MDSMetadata)
+    for fld in fieldnames(MDSMetadata)
+        if getfield(m1, fld) != getfield(m2, fld)
+            return false
+        end
+    end
+    true
 end
 
 const fields_set = Dict([field => false for field in fieldnames(MDSMetadata)])
