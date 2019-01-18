@@ -227,7 +227,7 @@ function get_token(str::String, i)
     end
 
     c = str[i]
-    if isletter(c)
+    if isletter(c) || c == '_'
         get_symbol_token(str, i)
     elseif c == '\''
         get_string_token(str, i)
@@ -252,7 +252,7 @@ function get_symbol_token(str, i)
     sym = "$(str[i])"
     i += 1
 
-    while i <= length(str) && (isletter(str[i]) || isnumeric(str[i]))
+    while i <= length(str) && (isletter(str[i]) || isnumeric(str[i]) || str[i] == '_')
         sym *= str[i]
         i += 1
     end
