@@ -99,7 +99,7 @@ end
 
 function mds_check_compatibility(dests::Vector{T}, metadata) where T <: AbstractArray
     if (metadata.nFlds === nothing && length(dests) != 1) || 
-        (length(dests) != metadata.nFlds)
+        (metadata.nFlds != nothing && length(dests) != metadata.nFlds)
         """
         readmds!: length(dests) does not match metadata.nFlds or if no field list was
         specified, there is not exactly 1 destination array.
