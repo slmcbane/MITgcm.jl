@@ -44,7 +44,9 @@ function readmds!(dests::Vector{T}, prefix::AbstractString,
                   metadata::Union{Nothing, MDSMetadata} = nothing) where T <: AbstractArray
     if metadata === nothing
         metadata = try
-            (prefix * ".meta") |> open |> parse_mds_metadata
+            open(prefix * ".meta") do f
+                parse_mds_metadata(f)
+            end
         catch exc
             """
             readmds!: Caught exception while parsing metadata file; contents: "$(exc.msg)".
@@ -61,7 +63,9 @@ end
 
 function readmds(prefix::AbstractString)
     metadata = try
-        (prefix * ".meta") |> open |> parse_mds_metadata
+        open(prefix * ".meta") do f
+            parse_mds_metadata(f)
+        end
     catch exc
         """
         readmds!: Caught exception while parsing metadata file; contents: "$(exc.msg)".
