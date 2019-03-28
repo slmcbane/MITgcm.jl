@@ -2,7 +2,7 @@ module Grids
 
 using PackedFaces
 
-export @llcgrid, LLC90, llc_arctic_face
+export @llcgrid, LLC90, llc_arctic_face, reorder2llc!
 
 "The index of the face containing the arctic, which is an exception to a lot of rules"
 const llc_arctic_face = 7
@@ -73,6 +73,31 @@ end
 
 # Generate the LLC90 type definition.
 @llcgrid LLC90 90
+
+@generated function reorder2llc!(dst::AbstractArray{T, N},
+                                 src::AbstractArray{T, N}
+                                ) where {T, N}
+    if N > 2
+        trailing = [Colon() for i = 3:N]
+    else
+        trailing = ()
+    end
+
+    quote
+        @assert size(dst) == size(src)
+        n = size(dst, 1)
+        @assert size(dst, 2) == 13n
+        
+        dst[:, 1:7*n, $trailing...] .= @view src[:, 1:7*n, $trailing...]
+        dst[:, 7*n+1:8*n, $trailing...] .= @view src[:, 7*n+1:3:10*n, $trailing...]
+        dst[:, 8*n+1:9*n, $trailing...] .= @view src[:, 7*n+2:3:10*n, $trailing...]
+        dst[:, 9*n+1:10*n, $trailing...] .= @view src[:, 7*n+3:3:10*n, $trailing...]
+        dst[:, 10*n+1:11*n, $trailing...] .= @view src[:, 10*n+1:3:13*n, $trailing...]
+        dst[:, 11*n+1:12*n, $trailing...] .= @view src[:, 10*n+2:3:13*n, $trailing...]
+        dst[:, 12*n+1:13*n, $trailing...] .= @view src[:, 10*n+3:3:13*n, $trailing...]
+        dst
+    end
+end
 
 end #module
 
